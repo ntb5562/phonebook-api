@@ -2,20 +2,34 @@ import prisma from '../tools/prisma.js';
 import express from 'express';
 var router = express.Router();
 
-// url?key=value ---- req.query.key
-
-// url/mydata  ---- url/:myVar ---- req.params.myVar
-
-// POST BODY - JSON data sent to the API
-
 router.get('/', async function(req, res, next) {
-
-  const users = await prisma.person.findMany()
-  var user_return = []
-  for (var i =0; i<users.length; i++){
-    user_return.push(users[i].name)
+  var users=[]
+  switch (req.query.sort) {
+    case 'name':
+      users = await prisma.person.findMany({
+        orderBy: [
+          {
+            name: 'asc',
+          },
+        ],
+      })
+      break;
+    case 'email':
+      users = await prisma.person.findMany({
+        orderBy: [
+          {
+            email: 'asc',
+          },
+        ],
+      })
+      break;
+    default:
+      users = await prisma.person.findMany()
+      break;
   }
-  res.send(user_return)
+  res.send(users)
+  
+  
 });
 
 
@@ -70,13 +84,10 @@ router.patch('/:id', async function(req, res, next){
     data: updateInfo,
   })
     res.send(updateUser)
-    // 2 things - status 200, sends back info as JSON
-
-    // different status, a message instead
+    
     
 });
 
-// using the post body
 router.post('/random', async function (req,res, next) {
   const user = await prisma.person.create({
     data: {
@@ -87,46 +98,8 @@ router.post('/random', async function (req,res, next) {
   res.send(user)
 })
 
-// http://localhost:3001/person?sort=name
 
-// HTTP methods everywhere, change to using post body,
-// endpoint for get all users in db alphabatetically by name
-router.get('/namesort', async function (req,res,next){
 
-  // try native prisma sorting - https://www.prisma.io/docs/concepts/components/prisma-client/filtering-and-sorting#sorting
-  
-  const users = await prisma.person.findMany()
-  var user_name = []
-  for (var i =0; i<users.length; i++){
-    user_name.push(users[i])
-  }
-  function compare(a,b){
-    if (a.name < b.name) return -1;
-    if (a.name>b.name) return 1;
-    return 0;
-  }
-  user_name = user_name.sort(compare)
-  res.send(user_name)
-  users.sort((a,b) => {
-    return a.name > b.name;
-  })
-  
-})
-// // endpoint for gertting all users alphabetically by email
-router.get('/emailsort', async function (req,res,next){
-  const users = await prisma.person.findMany()
-  var user_email = []
-  for (var i =0; i<users.length; i++){
-    user_email.push(users[i])
-  }
-  function compare(a,b){
-    if (a.email<b.email)return -1;
-    if (a.email>b.email)return 1;
-    return 0;
-  }
-  res.send(user_email.sort(compare))
-  
-})
 router.get('/:id', async function(req, res, next){
   const user = await prisma.person.findUnique({
       where: {
@@ -136,7 +109,6 @@ router.get('/:id', async function(req, res, next){
   res.send(user)
 
 });
-// Test everything in postman
 
 
  export default router;
